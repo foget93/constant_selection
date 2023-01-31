@@ -90,6 +90,10 @@ public:
         }
     }
 
+    std::vector<std::vector<int>> GetConstantsMT() {
+        return cnt_mt_.data;
+    }
+
     ~ReaderCNT() = default;
 
 private:

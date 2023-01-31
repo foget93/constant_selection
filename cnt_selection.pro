@@ -10,12 +10,14 @@ CONFIG += c++17
 
 SOURCES += \
     cnt_reader.cpp \
+    data_calculator.cpp \
     main.cpp \
     stat_reader.cpp \
     widget.cpp
 
 HEADERS += \
     cnt_reader.h \
+    data_calculator.h \
     stat_reader.h \
     widget.h
 
