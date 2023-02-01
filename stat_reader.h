@@ -19,64 +19,75 @@ public:
         : x_(other.x_), y_(other.y_), z_(other.z_) {
     }
 
-    Axes& operator=(const Axes& other) {
+    Axes operator=(const Axes& other) {
         x_ = other.x_;
         y_ = other.y_;
         z_ = other.z_;
         return *this;
     }
 
-    Axes& operator+(const Axes& other) {
+    Axes operator+(const Axes& other) {
         x_ += other.x_;
         y_ += other.y_;
         z_ += other.z_;
         return *this;
     }
-    Axes& operator+(Type other) {
+    Axes operator+(Type other) {
         x_ += other;
         y_ += other;
         z_ += other;
         return *this;
     }
 
-    Axes& operator-(const Axes& other) {
+    Axes operator-(const Axes& other) {
         x_ -= other.x_;
         y_ -= other.y_;
         z_ -= other.z_;
         return *this;
     }
-    Axes& operator-(Type other) {
+    Axes operator-(Type other) {
         x_ -= other;
         y_ -= other;
         z_ -= other;
         return *this;
     }
 
-    Axes& operator*(const Axes& other) {
+    Axes operator*(const Axes& other) {
         x_ -= other.x_;
         y_ -= other.y_;
         z_ -= other.z_;
         return *this;
     }
-    Axes& operator*(Type other) {
+    Axes operator*(Type other) {
         x_ *= other;
         y_ *= other;
         z_ *= other;
         return *this;
     }
 
-    Axes& operator/(Type other) {
+    Axes operator/(Type other) {
         x_ /= other;
         y_ /= other;
         z_ /= other;
         return *this;
     }
 
-    Axes& operator/(const Axes& other) {
+    Axes operator/(const Axes& other) {
         x_ /= other.x_;
         y_ /= other.y_;
         z_ /= other.z_;
         return *this;
+    }
+
+
+
+
+    operator Axes<double>() const {
+        return Axes<double>{double(x_),double(y_),double(z_)};
+    }
+
+    operator Axes<int>() const {
+        return Axes<int>{int(x_),int(y_),int(z_)};
     }
 
     Type GetX() const {return x_;}

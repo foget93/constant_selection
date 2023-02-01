@@ -25,7 +25,7 @@ int main(/*int argc, char *argv[]*/)
 {
     ReaderCNT cnt("/home/dmitrii/QtExample/build-cnt_selection-Desktop_Qt_6_3_0_GCC_64bit-Debug/C212.CNT");
     //
-    ReaderStat stat("/home/dmitrii/QtExample/build-cnt_selection-Desktop_Qt_6_3_0_GCC_64bit-Debug/A212-1.1");
+    ReaderStat stat("/home/dmitrii/QtExample/build-cnt_selection-Desktop_Qt_6_3_0_GCC_64bit-Debug/A212-1.4");
 
     Axes<int> sum_192 {stat.GetSum192()};
     std::vector<Axes<int>> R = stat.GetMtInfo();
@@ -33,6 +33,7 @@ int main(/*int argc, char *argv[]*/)
     std::vector<Axes<int>> b = VecToAxes(constants);
 
     DataCalculator calc(b, R, sum_192, stat.GetGeoCfs());
+    std::vector<Axes<double>> x = calc.CalculationMT();
     //DataCalculator(const std::vector<Axes>& cnt, const std::vector<Axes>& r, Axes sum192)
 
 //    int a = 0;

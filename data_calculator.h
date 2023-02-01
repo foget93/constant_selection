@@ -27,9 +27,41 @@ public:
     }
 
     std::vector<Axes<double>> CalculationMT() {
-        Axes<double> RF = Axes<double>{static_cast<double>(sum192_.GetX()),
-                static_cast<double>(sum192_.GetY()),
-                static_cast<double>(sum192_.GetZ())} / 192.0 - constants_.at("AF").;
+        const double RFx = sum192_.GetX() / 192.0 - constants_["AF"].GetX() - HF * constants_["BF"].GetX();
+        const double RFy = sum192_.GetY() / 192.0 - constants_["AF"].GetY() - HF * constants_["BF"].GetY();
+        const double RFz = sum192_.GetZ() / 192.0 - constants_["AF"].GetZ() - HF * constants_["BF"].GetZ();
+
+        std::vector<Axes<double>> result;
+        result.reserve(5);
+        double tau_x = constants_["AT"].GetX() * HAT * RFx + constants_["BT"].GetX() * HBT;
+        double tau_y = constants_["AT"].GetY() * HAT * RFy + constants_["BT"].GetY() * HBT;
+        double tau_z = constants_["AT"].GetZ() * HAT * RFz + constants_["BT"].GetZ() * HBT;
+        result.push_back({tau_x, tau_y, tau_z});
+
+
+        double y = ((RFy * RFy) * constants_["AD"].GetY()) + (RFy * constants_["BD"].GetY()) + constants_["CD"].GetY();
+
+
+        double D_x = constants_["AD"].GetX() * HAD * RFx * RFx + constants_["BD"].GetX() * HBD * RFx + constants_["CD"].GetX() * E;
+        double D_y = constants_["AD"].GetY() * HAD * RFy * RFy + constants_["BD"].GetY() * HBD * RFy + constants_["CD"].GetY() * E;
+        double D_z = constants_["AD"].GetZ() * HAD * RFz * RFz + constants_["BD"].GetZ() * HBD * RFz + constants_["CD"].GetZ() * E;
+        result.push_back({D_x, D_y, D_z});
+
+        double K_x = constants_["AK"].GetX() * HAK * RFx * RFx + constants_["BK"].GetX() * HBK * RFx + constants_["CK"].GetX() * HCK;
+        double K_y = constants_["AK"].GetY() * HAK * RFy * RFy + constants_["BK"].GetY() * HBK * RFy + constants_["CK"].GetY() * HCK;
+        double K_z = constants_["AK"].GetZ() * HAK * RFz * RFz + constants_["BK"].GetZ() * HBK * RFz + constants_["CK"].GetZ() * HCK;
+        result.push_back({K_x, K_y, K_z});
+
+        double V_x = constants_["AV"].GetX() * HAV * RFx * RFx + constants_["BV"].GetX() * HBV * RFx + constants_["CV"].GetX() * E + constants_["DV"].GetX() * EE;
+        double V_y = constants_["AV"].GetY() * HAV * RFy * RFy + constants_["BV"].GetY() * HBV * RFy + constants_["CV"].GetY() * E + constants_["DV"].GetY() * EE;
+        double V_z = constants_["AV"].GetZ() * HAV * RFz * RFz + constants_["BV"].GetZ() * HBV * RFz + constants_["CV"].GetZ() * E + constants_["DV"].GetZ() * EE;
+        result.push_back({V_x, V_y, V_z});
+
+        double Km_x = K_0 + K_SH * constants_["G"].GetX();
+        double Km_y = K_0 + K_SH * constants_["G"].GetY();
+        double Km_z = K_0 + K_SH * constants_["G"].GetZ();
+        result.push_back({Km_x, Km_y, Km_z});
+        return result;
     }
 
 
@@ -44,7 +76,7 @@ private: //coef
         std::hash<std::string_view> hasher_;
     };
 
-    const std::vector<std::string_view> constant_names_= {"G"s, "AF"s, "BF"s,
+    const std::vector<std::string> constant_names_=      {"G"s, "AF"s, "BF"s,
                                                           "AT"s, "BT"s,
                                                           "AD"s, "BD"s, "CD"s,
                                                           "AK"s, "BK"s, "CK"s,
