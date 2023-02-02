@@ -33,7 +33,10 @@ int main(/*int argc, char *argv[]*/)
     std::vector<Axes<int>> b = VecToAxes(constants);
 
     DataCalculator calc(b, R, sum_192, stat.GetGeoCfs());
-    std::vector<Axes<double>> x = calc.CalculationMT();
+
+    /*std::vector<Axes<double>>*/auto x = calc.CalculationDrift();
+
+    Axes<double> sred = std::accumulate(x.begin(), x.end(), Axes<double>{}) / x.size();
     //DataCalculator(const std::vector<Axes>& cnt, const std::vector<Axes>& r, Axes sum192)
 
 //    int a = 0;

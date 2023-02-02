@@ -19,68 +19,35 @@ public:
         : x_(other.x_), y_(other.y_), z_(other.z_) {
     }
 
-    Axes operator=(const Axes& other) {
+    Axes& operator=(const Axes& other) {
         x_ = other.x_;
         y_ = other.y_;
         z_ = other.z_;
         return *this;
     }
+    Axes operator-(const Axes& other) {
+        return Axes<Type> {
+            x_ - other.x_,
+            y_ - other.y_,
+            z_ - other.z_
+        };
+    }
 
     Axes operator+(const Axes& other) {
-        x_ += other.x_;
-        y_ += other.y_;
-        z_ += other.z_;
-        return *this;
-    }
-    Axes operator+(Type other) {
-        x_ += other;
-        y_ += other;
-        z_ += other;
-        return *this;
+        return Axes<Type> {
+            x_ + other.x_,
+            y_ + other.y_,
+            z_ + other.z_
+        };
     }
 
-    Axes operator-(const Axes& other) {
-        x_ -= other.x_;
-        y_ -= other.y_;
-        z_ -= other.z_;
-        return *this;
+    Axes<Type> operator/(size_t other) {
+        return Axes<Type> {
+            x_ / static_cast<Type>(other),
+            y_ / static_cast<Type>(other),
+            z_ / static_cast<Type>(other)
+        };
     }
-    Axes operator-(Type other) {
-        x_ -= other;
-        y_ -= other;
-        z_ -= other;
-        return *this;
-    }
-
-    Axes operator*(const Axes& other) {
-        x_ -= other.x_;
-        y_ -= other.y_;
-        z_ -= other.z_;
-        return *this;
-    }
-    Axes operator*(Type other) {
-        x_ *= other;
-        y_ *= other;
-        z_ *= other;
-        return *this;
-    }
-
-    Axes operator/(Type other) {
-        x_ /= other;
-        y_ /= other;
-        z_ /= other;
-        return *this;
-    }
-
-    Axes operator/(const Axes& other) {
-        x_ /= other.x_;
-        y_ /= other.y_;
-        z_ /= other.z_;
-        return *this;
-    }
-
-
-
 
     operator Axes<double>() const {
         return Axes<double>{double(x_),double(y_),double(z_)};
@@ -89,6 +56,14 @@ public:
     operator Axes<int>() const {
         return Axes<int>{int(x_),int(y_),int(z_)};
     }
+
+//    operator Axes<Type>() const {
+//        return Axes<Type>{
+//            static_cast<Type>(x_),
+//            static_cast<Type>(y_),
+//            static_cast<Type>(z_)
+//        };
+//    }
 
     Type GetX() const {return x_;}
     Type GetY() const {return y_;}
@@ -115,6 +90,7 @@ struct GeographicCoefs {
     double g {9.8156}; // ускорение свободного падения(Москва), на экваторе 9.7810
     double lat {55.85}; // широта москва
     double az {0.0}; // азимут
+    int position {1};
 };
 
 
@@ -125,8 +101,14 @@ public:
         if (!in_file) {
             throw std::invalid_argument("ReaderStat - Can't open input file");
         }
-        //первый 6 строк минус
-        for(int i {0}; i < 2; ++i) {
+        //pos
+        for(int i {0}; i < 1; ++i) {
+            std::string str {};
+            std::getline(in_file, str);
+            coefs_.position = std::stoi(str.substr(21, 1));
+        }
+        // propusk
+        for(int i {0}; i < 1; ++i) {
             std::string str {};
             std::getline(in_file, str);
         }

@@ -1,20 +1,26 @@
 #pragma once
+
 #include <vector>
 #include "stat_reader.h"
 #include <unordered_map>
 #include <algorithm>
 #include <string_view>
+#include <cmath>
+#include <algorithm>
+#include <functional>
+
+inline Axes<double> CalculateOmegaEarch(int pos, double azimuth, double lat);
 
 using namespace std::string_literals;
-struct Coefs {
-    double tau {0.0};
-    double d {0.0};
-    double k {0.0};
-};
+//struct Coefs {
+//    double tau {0.0};
+//    double d {0.0};
+//    double k {0.0};
+//};
 class DataCalculator {
 public:
     DataCalculator(const std::vector<Axes<int>>& cnt, const std::vector<Axes<int>>& r, Axes<int> sum192, GeographicCoefs cfs)
-        : cfs_(cfs), sum192_(sum192), r_(r) {
+        : cfs_(cfs), sum192_(sum192), r_(r), omega_earch_(CalculateOmegaEarch(cfs.position, cfs.az, cfs.lat)) {
 
         if (cnt.size() == constant_names_.size()) {
             for (int i {0}; i < static_cast<int>(cnt.size()); ++i) {
@@ -26,10 +32,11 @@ public:
         }
     }
 
-    std::vector<Axes<double>> CalculationMT() {
-        const double RFx = sum192_.GetX() / 192.0 - constants_["AF"].GetX() - HF * constants_["BF"].GetX();
-        const double RFy = sum192_.GetY() / 192.0 - constants_["AF"].GetY() - HF * constants_["BF"].GetY();
-        const double RFz = sum192_.GetZ() / 192.0 - constants_["AF"].GetZ() - HF * constants_["BF"].GetZ();
+    std::vector<Axes<double>> CalculationCoefs() {
+        const double RFx = sum192_.GetX() / 100.0/*192.0*/ - constants_.at("AF").GetX() - HF * constants_.at("BF").GetX();
+        const double RFy = sum192_.GetY() / 100.0/*192.0*/ - constants_.at("AF").GetY() - HF * constants_.at("BF").GetY();
+        const double RFz = sum192_.GetZ() / 100.0/*192.0*/ - constants_.at("AF").GetZ() - HF * constants_.at("BF").GetZ();
+    // делим на 100 судя по всему для получения киллогерц ( суммы снятые с файла уже поделяны по моему скромному мнению на 192)
 
         std::vector<Axes<double>> result;
         result.reserve(5);
@@ -37,10 +44,6 @@ public:
         double tau_y = constants_["AT"].GetY() * HAT * RFy + constants_["BT"].GetY() * HBT;
         double tau_z = constants_["AT"].GetZ() * HAT * RFz + constants_["BT"].GetZ() * HBT;
         result.push_back({tau_x, tau_y, tau_z});
-
-
-        double y = ((RFy * RFy) * constants_["AD"].GetY()) + (RFy * constants_["BD"].GetY()) + constants_["CD"].GetY();
-
 
         double D_x = constants_["AD"].GetX() * HAD * RFx * RFx + constants_["BD"].GetX() * HBD * RFx + constants_["CD"].GetX() * E;
         double D_y = constants_["AD"].GetY() * HAD * RFy * RFy + constants_["BD"].GetY() * HBD * RFy + constants_["CD"].GetY() * E;
@@ -62,6 +65,55 @@ public:
         double Km_z = K_0 + K_SH * constants_["G"].GetZ();
         result.push_back({Km_x, Km_y, Km_z});
         return result;
+    }
+
+
+    /*std::pair<std::vector<Axes<double>>,*/ std::vector<Axes<double>> CalculationDrift() {
+
+        const std::vector<Axes<double>> coefs = CalculationCoefs();
+        const auto& Km = coefs.at(4);
+        std::vector<Axes<double>> drift(r_.size());
+
+        std::transform(r_.begin(), r_.end(),
+                       drift.begin(),
+                       [Km, *this](const Axes<int>& value){
+            double x = (value.GetX() * Km.GetX()) / 60.0 - omega_earch_.GetX();
+            double y = (value.GetY() * Km.GetY()) / 60.0 - omega_earch_.GetY();
+            double z = (value.GetZ() * Km.GetZ()) / 60.0 - omega_earch_.GetZ();
+            return Axes<double>{x, y, z};
+        }); // проверить
+
+
+        std::vector<Axes<double>> corrections(r_.size());
+
+        int t = 60;
+        const auto& tau = coefs.at(0);
+        const auto& D = coefs.at(1);
+        const auto& K = coefs.at(2);
+        const auto& V = coefs.at(3);
+
+        std::for_each(corrections.begin(), corrections.end(),
+                      [tau, D, K, V, &t](Axes<double>& value){
+            double x = D.GetX() * std::exp(-(t - 30) / tau.GetX()) + K.GetX() * (t - 30) + V.GetX();
+            double y = D.GetY() * std::exp(-(t - 30) / tau.GetY()) + K.GetY() * (t - 30) + V.GetY();
+            double z = D.GetZ() * std::exp(-(t - 30) / tau.GetZ()) + K.GetZ() * (t - 30) + V.GetZ();
+            t += 60;
+            value = Axes<double>{x, y, z};
+        });
+
+        std::vector<Axes<double>> drift_with_cor(r_.size());
+//        for (int i = 0; i < static_cast<int>(drift_with_cor.size()); ++i) {
+//            drift_with_cor[i] = drift[i] - corrections[i];
+//        }
+
+        std::transform(drift.cbegin(), drift.cend(), //можно не создавать новый вектор
+                       corrections.cbegin(),
+                       drift_with_cor.begin(),
+                       [](auto value1, auto value2){
+            return value1 - value2;
+        });
+
+        return drift_with_cor;/*std::pair{drift, corrections};*/
     }
 
 
@@ -103,7 +155,124 @@ private:
     Axes<int> sum192_;
     std::vector<Axes<int>> r_;
     std::unordered_map<std::string_view, Axes<int>, HasherStringView> constants_;
-
+    Axes<double> omega_earch_;
 };
 
+#define _USE_MATH_DEFINES
 
+Axes<double> CalculateOmegaEarch(int pos, double azimuth, double lat) {
+    if (pos < 1 ||  pos > 6) {
+        throw std::invalid_argument("pos not included it the segment [1..6]");
+    }
+    static constexpr double W_e = 15.038; // угловая скорость вращения земли
+    double omega_vert = W_e * std::sin(lat * M_PI / 180.);
+    double omega_north = W_e * std::cos(lat * M_PI / 180.);
+    double omega_sin = omega_north * std::sin(azimuth * M_PI / 180.);
+    double omega_cos = omega_north * std::cos(azimuth * M_PI / 180.);
+    Axes<double> W;
+    switch (pos) {
+    case 1:
+
+        W = Axes<double>{
+                -omega_sin,
+                omega_cos,
+                omega_vert
+        };
+        break;
+
+    case 2:
+        W = Axes<double>{
+                omega_sin,
+                omega_cos,
+                -omega_vert
+        };
+        break;
+
+    case 3:
+        W = Axes<double>{
+                omega_vert,
+                omega_cos,
+                omega_sin
+        };
+        break;
+
+    case 4:
+        W = Axes<double>{
+                -omega_vert,
+                omega_cos,
+                -omega_sin
+        };
+        break;
+
+    case 5:
+        W = Axes<double>{
+                omega_sin,
+                omega_vert,
+                omega_cos
+        };
+        break;
+    case 6:
+        W = Axes<double>{
+                -omega_sin,
+                -omega_vert,
+                omega_cos
+        };
+        break;
+    default:
+        W = Axes<double>{};
+        break;
+//    switch (pos) {
+
+//    case 1:
+//        W = Axes<double>{
+//            -W_e * std::cos(lat) * std::sin(azimuth),
+//            W_e * std::cos(lat) * std::cos(azimuth),
+//            W_e * std::sin(lat)
+//        };
+//        break;
+
+//    case 2:
+//        W = Axes<double>{
+//            W_e * std::cos(lat) * std::sin(azimuth),
+//            W_e * std::cos(lat) * std::cos(azimuth),
+//            -W_e * std::sin(lat)
+//        };
+//        break;
+
+//    case 3:
+//        W = Axes<double>{
+//            W_e * std::sin(lat),
+//            W_e * std::cos(lat) * std::cos(azimuth),
+//            W_e * std::cos(lat) * std::sin(azimuth)
+//        };
+//        break;
+
+//    case 4:
+//        W = Axes<double>{
+//            -W_e * std::sin(lat),
+//            W_e * std::cos(lat) * std::cos(azimuth),
+//            -W_e * std::cos(lat) * std::sin(azimuth)
+//        };
+//        break;
+
+//    case 5:
+//        W = Axes<double>{
+//            W_e * std::cos(lat) * std::sin(azimuth),
+//            W_e * std::sin(lat),
+//            W_e * std::cos(lat) * std::cos(azimuth)
+//        };
+//        break;
+//    case 6:
+//        W = Axes<double>{
+//            -W_e * std::cos(lat) * std::sin(azimuth),
+//            -W_e * std::sin(lat),
+//            W_e * std::cos(lat) * std::cos(azimuth)
+//        };
+//        break;
+//    default:
+//        W = Axes<double>{};
+//        break;
+//    }
+ }
+    return W;
+}
