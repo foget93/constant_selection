@@ -12,11 +12,7 @@
 inline Axes<double> CalculateOmegaEarch(int pos, double azimuth, double lat);
 
 using namespace std::string_literals;
-//struct Coefs {
-//    double tau {0.0};
-//    double d {0.0};
-//    double k {0.0};
-//};
+
 class DataCalculator {
 public:
     DataCalculator(const std::vector<Axes<int>>& cnt, const std::vector<Axes<int>>& r, Axes<int> sum192, GeographicCoefs cfs)
@@ -221,58 +217,6 @@ Axes<double> CalculateOmegaEarch(int pos, double azimuth, double lat) {
     default:
         W = Axes<double>{};
         break;
-//    switch (pos) {
-
-//    case 1:
-//        W = Axes<double>{
-//            -W_e * std::cos(lat) * std::sin(azimuth),
-//            W_e * std::cos(lat) * std::cos(azimuth),
-//            W_e * std::sin(lat)
-//        };
-//        break;
-
-//    case 2:
-//        W = Axes<double>{
-//            W_e * std::cos(lat) * std::sin(azimuth),
-//            W_e * std::cos(lat) * std::cos(azimuth),
-//            -W_e * std::sin(lat)
-//        };
-//        break;
-
-//    case 3:
-//        W = Axes<double>{
-//            W_e * std::sin(lat),
-//            W_e * std::cos(lat) * std::cos(azimuth),
-//            W_e * std::cos(lat) * std::sin(azimuth)
-//        };
-//        break;
-
-//    case 4:
-//        W = Axes<double>{
-//            -W_e * std::sin(lat),
-//            W_e * std::cos(lat) * std::cos(azimuth),
-//            -W_e * std::cos(lat) * std::sin(azimuth)
-//        };
-//        break;
-
-//    case 5:
-//        W = Axes<double>{
-//            W_e * std::cos(lat) * std::sin(azimuth),
-//            W_e * std::sin(lat),
-//            W_e * std::cos(lat) * std::cos(azimuth)
-//        };
-//        break;
-//    case 6:
-//        W = Axes<double>{
-//            -W_e * std::cos(lat) * std::sin(azimuth),
-//            -W_e * std::sin(lat),
-//            W_e * std::cos(lat) * std::cos(azimuth)
-//        };
-//        break;
-//    default:
-//        W = Axes<double>{};
-//        break;
-//    }
  }
     return W;
 }

@@ -57,14 +57,6 @@ public:
         return Axes<int>{int(x_),int(y_),int(z_)};
     }
 
-//    operator Axes<Type>() const {
-//        return Axes<Type>{
-//            static_cast<Type>(x_),
-//            static_cast<Type>(y_),
-//            static_cast<Type>(z_)
-//        };
-//    }
-
     Type GetX() const {return x_;}
     Type GetY() const {return y_;}
     Type GetZ() const {return z_;}
@@ -171,6 +163,15 @@ public:
     std::vector<Axes<int>> GetMtInfo() const {
         return mt_.data;
     }
+    // acc info + temp ====================================
+    std::vector<Axes<int>> GetAccInfo() const {
+        return acc_.data;
+    }
+
+    std::vector<double> GetCodesTempInfo() const {
+        return temp_.data;
+    }
+    // ====================================================
 
     GeographicCoefs GetGeoCfs() {
         return coefs_;

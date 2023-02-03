@@ -6,6 +6,8 @@
 #include <fstream>
 #include <string_view>
 
+#include <stat_reader.h> // for axes -> перенести аксес в др файл
+
 using namespace std::literals;
 
 constexpr int COUNT_CNT_GYROSCOPE = 17;
@@ -32,19 +34,33 @@ struct Constants_mt {
 
 struct Constant_accelerometer {
     std::vector<std::vector<int>> data;
+    std::vector<std::vector<double>> data_double;
+    std::vector<double> constan_base;
+
     std::vector<int> tail_data;
 
     explicit Constant_accelerometer() {
         data.resize(COUNT_AXIS);
+        data_double.resize(COUNT_AXIS);
+        constan_base.resize(COUNT_AXIS);
+// TUT
         tail_data.resize(AFTER_ACCELEROMETR);
 
         std::vector<int> x_acc(COUNT_CNT_ACCELEROMETR);
         std::vector<int> y_acc(COUNT_CNT_ACCELEROMETR);
         std::vector<int> z_acc(COUNT_CNT_ACCELEROMETR);
-
         data[0] = std::move(x_acc);
         data[1] = std::move(y_acc);
         data[2] = std::move(z_acc);
+        //  55   -2   -0.000381469    KTPx1   067   FE   11111110
+        // считанные данные  # (-2) -> константа   (-0.000381469) -> данные
+        std::vector<double> x_acc_double(COUNT_CNT_ACCELEROMETR);
+        std::vector<double> y_acc_double(COUNT_CNT_ACCELEROMETR);
+        std::vector<double> z_acc_double(COUNT_CNT_ACCELEROMETR);
+        data_double[0] = std::move(x_acc_double);
+        data_double[1] = std::move(y_acc_double);
+        data_double[2] = std::move(z_acc_double);
+
 
     }
 };
@@ -66,7 +82,7 @@ public:
                 std::string buf;
                 std::getline(in_file, buf);
 
-                cnt_mt_.data[j][i] = std::stoi(buf.substr(5, 3));// 6 символов пропустить и взять 3
+                cnt_mt_.data[j][i] = std::stoi(buf.substr(4, 4));// 6 символов пропустить и взять 4, устарел коммент
             }
         }
         // ===============================================
@@ -77,7 +93,7 @@ public:
                 std::string buf;
                 std::getline(in_file, buf);
 
-                cnt_acc_.data[j][i] = std::stoi(buf.substr(5, 3));
+                cnt_acc_.data[j][i] = std::stoi(buf.substr(4, 4));
             }
         }
         // =================================================
@@ -86,7 +102,7 @@ public:
             std::string buf;
             std::getline(in_file, buf);
 
-            cnt_acc_.tail_data[i] = std::stoi(buf.substr(5, 3));
+            cnt_acc_.tail_data[i] = std::stoi(buf.substr(4, 4));
         }
     }
 
